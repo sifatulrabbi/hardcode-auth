@@ -31,7 +31,7 @@ func prepareConfigs() {
 	ENVConfig.DB_NAME = getENV("DB_NAME", true)
 	ENVConfig.DB_HOST = getENV("DB_HOST", true)
 	ENVConfig.DB_HOST = getENV("DB_HOST", true)
-	ENVConfig.DB_PASS = getENV("DB_PASS", true)
+	ENVConfig.DB_PASS = getENV("DB_PASS", false)
 	ENVConfig.DB_USER = getENV("DB_USER", true)
 	ENVConfig.PORT = getENV("PORT", true, "8000")
 }
