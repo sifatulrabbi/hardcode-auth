@@ -9,8 +9,15 @@ import (
 
 var dbConn *gorm.DB = nil
 
-func NewConnection() {
-	db, err := gorm.Open(sqlite.Open(".locals/local.db"), &gorm.Config{})
+type DBConnConfig struct {
+	DBPath string
+}
+
+func NewConnection(cfg *DBConnConfig) {
+	if cfg == nil {
+		cfg = &DBConnConfig{DBPath: ".locals/local.db"}
+	}
+	db, err := gorm.Open(sqlite.Open(cfg.DBPath), &gorm.Config{})
 	if err != nil {
 		log.Panicln("failed to connect to db:", err)
 	}

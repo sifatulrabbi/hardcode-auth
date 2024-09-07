@@ -106,6 +106,11 @@ func (api *API) signupHandler(c *gin.Context) {
 	if err := c.BindJSON(&payload); err != nil {
 		log.Panicln("unable to parse body", err)
 	}
+
+	// create the user
+	// 1. make sure the use does not exists in the database
+	// 2. hash the password with bcrypt
+	// 3. save it
 }
 
 // func resetPasswordHandler(c *gin.Context) {
