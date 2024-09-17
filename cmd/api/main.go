@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	db.NewConnection()
+	db.NewConnection(&db.DBConnConfig{})
 	api := hardcodeauth.New(db.GetDB())
 	if err := api.StartAPI(); err != nil {
 		panic(err)

@@ -1,0 +1,29 @@
+{
+  "name": "hardcode-auth",
+  "version": "1.0.0",
+  "description": "TypeScript/JavaScript SDK for Hardcode auth",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "authentication",
+    "auth",
+    "token",
+    "typescript"
+  ],
+  "author": "Sifatul Rabbi <sifatulrabbii@gmail.com>",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/jest": "^29.5.13",
+    "jest": "^29.7.0",
+    "typescript": "^5.6.2"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
