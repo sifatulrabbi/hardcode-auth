@@ -14,6 +14,11 @@ import (
 	"github.com/sifatulrabbi/hardcode-auth/db"
 )
 
+const (
+	LOGIN_LOOKUP_COOKIE = "hardcode_auth_login_validation"
+	SESSION_COOKIE      = "hardcode_auth_session"
+)
+
 type API struct {
 	db   *gorm.DB
 	port string
@@ -32,6 +37,7 @@ func (api *API) StartAPI() error {
 
 	authGrp := r.Group("/auth")
 	authGrp.POST("/signin", api.signinHandler)
+	authGrp.POST("/signin-lookup", api.signinLookupHandler)
 	authGrp.POST("/signup", api.signupHandler)
 	// authGrp.POST("/reset-password", api.resetPasswordHandler)
 	// authGrp.POST("/change-email", api.changeEmailHandler)
@@ -49,6 +55,31 @@ func (api *API) StartAPI() error {
 	// accountGrp.DELETE("/:userid")
 
 	return r.Run(api.port)
+}
+
+func (api *API) signinLookupHandler(c *gin.Context) {
+	defer c.Abort()
+	payload := struct{ email string }{}
+	if err := c.BindJSON(&payload); err != nil {
+		if errors.Is(io.EOF, err) {
+			c.JSON(http.StatusBadRequest, gin.H{"message": "Request body is empty. Please provide an email for lookup."})
+			return
+		}
+		log.Println("error while binding json:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Please provide an valid email address."})
+		return
+	}
+	user := db.User{}
+	if err := api.db.First(&user, "email = ?", payload.email).Error; err != nil || user.Email != payload.email {
+		log.Println("error while getting the user from db:", err)
+		c.JSON(http.StatusBadRequest, gin.H{"message": "No user found please sign up first."})
+		return
+	}
+
+	jwtToken := "TODO: generate a jwt with the email"
+	// set the jwt in the client cookies for login verification.
+	c.SetCookie(LOGIN_LOOKUP_COOKIE, jwtToken, 3600, "", "", false, true)
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "User found proceed to login."})
 }
 
 func (api *API) signinHandler(c *gin.Context) {
