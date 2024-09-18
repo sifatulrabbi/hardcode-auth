@@ -102,18 +102,16 @@ func (api *API) signinHandler(c *gin.Context) {
 		return
 	}
 
-	// add a cookie verification for the login
 	loginCookie, err := c.Cookie(LOGIN_LOOKUP_COOKIE)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Please login first."})
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Unable to verify login attempt please re-login."})
 		return
 	}
 	tokenEmail, err := ParseLoginCookieJWT(loginCookie)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid login action"})
 		return
-	}
-	if tokenEmail != payload.email {
+	} else if tokenEmail != payload.email {
 		c.JSON(http.StatusUnauthorized, gin.H{"message": "Email mismatch. Please login again."})
 		return
 	}
@@ -121,7 +119,7 @@ func (api *API) signinHandler(c *gin.Context) {
 	user := db.User{}
 	if tx := api.db.First(&user, "email = ?", payload.email); tx.Error != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "Unable to find the user",
+			"message": "Unable to find the user! Make sure you're registered with your email.",
 			"error":   tx.Error.Error(),
 		})
 		return
