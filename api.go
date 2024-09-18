@@ -2,7 +2,6 @@ package hardcodeauth
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -76,21 +75,23 @@ func (api *API) signinLookupHandler(c *gin.Context) {
 		return
 	}
 
-	jwtToken := "TODO: generate a jwt with the email"
-	// set the jwt in the client cookies for login verification.
+	jwtToken, err := GenerateLoginCookieValidationJWT(user.Email)
+	if err != nil {
+		log.Println("error while generating jwt:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Unable to validate the user."})
+		return
+	}
 	c.SetCookie(LOGIN_LOOKUP_COOKIE, jwtToken, 3600, "", "", false, true)
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "User found proceed to login."})
 }
 
 func (api *API) signinHandler(c *gin.Context) {
-	type signinPayload struct {
-		email    string
-		password string
-	}
-
 	defer c.Abort()
 
-	payload := signinPayload{}
+	payload := struct {
+		email    string
+		password string
+	}{}
 	if err := c.BindJSON(&payload); err != nil {
 		if errors.Is(io.EOF, err) {
 			c.JSON(http.StatusBadRequest, gin.H{"message": "Request body is empty. Please provide your email and password to login."})
@@ -100,7 +101,22 @@ func (api *API) signinHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
-	fmt.Println(payload)
+
+	// add a cookie verification for the login
+	loginCookie, err := c.Cookie(LOGIN_LOOKUP_COOKIE)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Please login first."})
+		return
+	}
+	tokenEmail, err := ParseLoginCookieJWT(loginCookie)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid login action"})
+		return
+	}
+	if tokenEmail != payload.email {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "Email mismatch. Please login again."})
+		return
+	}
 
 	user := db.User{}
 	if tx := api.db.First(&user, "email = ?", payload.email); tx.Error != nil {
@@ -118,7 +134,7 @@ func (api *API) signinHandler(c *gin.Context) {
 
 	c.JSON(200, gin.H{
 		"message":     "Successfully logged in",
-		"user":        nil,
+		"user":        user.Truncate(),
 		"accessToken": nil,
 	})
 }
